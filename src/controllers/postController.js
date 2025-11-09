@@ -181,3 +181,69 @@ export const createPost = expressAsyncHandler(async (req, res, next) => {
     data,
   });
 });
+
+/*
+ ? @desc    Delete a post
+ ? @route   DELETE /api/posts/:postid
+ ? @access  Private
+*/
+export const deletePost = expressAsyncHandler(async (req, res, next) => {
+  const userId = req.user?.id;
+  const { postid } = req.params;
+
+  // Validate user
+  if (!userId) {
+    return next(new AppError("Unauthorized. Please log in first.", 401));
+  }
+
+  // Validate post ID
+  const parsedPostId = Number(postid);
+  if (!parsedPostId || Number.isNaN(parsedPostId)) {
+    return next(new AppError("Invalid post ID", 400));
+  }
+
+  // 1️⃣ Check if the post exists
+  const { data: post, error: fetchErr } = await supabase
+    .from("posts")
+    .select("id, userid, img")
+    .eq("id", parsedPostId)
+    .maybeSingle();
+
+  if (fetchErr) {
+    console.error("Supabase fetch error (deletePost):", fetchErr);
+    return next(new AppError("Database error while fetching post", 500));
+  }
+
+  if (!post) {
+    return next(new AppError("Post not found", 404));
+  }
+
+  // 2️⃣ Check if the current user owns the post
+  if (post.userid !== userId) {
+    return next(new AppError("You are not authorized to delete this post", 403));
+  }
+
+  // 3️⃣ Delete the post
+  const { error: deleteErr } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", parsedPostId);
+
+  if (deleteErr) {
+    console.error("Supabase delete error:", deleteErr);
+    return next(new AppError("Failed to delete post", 500));
+  }
+
+  // ✅ Optional: delete image from Cloudinary if post.img exists
+  // (only if you're storing the Cloudinary public_id)
+  // Example:
+  // if (post.imgPublicId) {
+  //   await cloudinary.uploader.destroy(post.imgPublicId);
+  // }
+
+  return res.status(200).json({
+    status: "success",
+    message: "Post deleted successfully",
+    data: { postId: parsedPostId },
+  });
+});
