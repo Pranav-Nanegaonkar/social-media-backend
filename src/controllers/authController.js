@@ -1,11 +1,12 @@
 import expressAsyncHandler from "express-async-handler";
-
 import { generateToken } from "../utils/generateToken.js";
 import { comparePassword, hashPassword } from "../utils/hashPassword.js";
 import validator from "validator";
 import jwt from "jsonwebtoken";
 import AppError from "../utils/AppError.js";
 import supabase from "../config/supabaseClient.js";
+
+const isProduction = process.env.NODE_ENV === "production";
 
 /*
  ? @desc    Register new user
@@ -15,7 +16,6 @@ import supabase from "../config/supabaseClient.js";
 export const register = expressAsyncHandler(async (req, res, next) => {
   const { username, email, password, name } = req.body;
 
-  // Validate fields
   if (!username || !email || !password || !name) {
     return next(new AppError("All fields are required", 400));
   }
@@ -25,9 +25,7 @@ export const register = expressAsyncHandler(async (req, res, next) => {
   }
 
   if (password.length < 8) {
-    return next(
-      new AppError("Password must be at least 8 characters long", 400)
-    );
+    return next(new AppError("Password must be at least 8 characters long", 400));
   }
 
   // Check if username already exists
@@ -84,7 +82,6 @@ export const register = expressAsyncHandler(async (req, res, next) => {
     return next(new AppError("Error while creating user", 500));
   }
 
-  // Respond success
   return res.status(201).json({
     status: "success",
     message: "User registered successfully",
@@ -104,7 +101,6 @@ export const login = expressAsyncHandler(async (req, res, next) => {
     return next(new AppError("All fields are required", 400));
   }
 
-  // Fetch user from Supabase
   const { data: user, error } = await supabase
     .from("users")
     .select("*")
@@ -120,13 +116,11 @@ export const login = expressAsyncHandler(async (req, res, next) => {
     return next(new AppError("Invalid credentials", 400));
   }
 
-  // Compare password
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) {
     return next(new AppError("Invalid credentials", 400));
   }
 
-  // Generate JWT
   const token = generateToken({
     id: user.id,
     username: user.username,
@@ -138,12 +132,11 @@ export const login = expressAsyncHandler(async (req, res, next) => {
     website: user.website,
   });
 
-  // Send cookie + response
   res
     .cookie("accessToken", token, {
       httpOnly: true,
-      secure: false, // change to true in production
-      sameSite: "lax",
+      secure: isProduction, // true on Render
+      sameSite: isProduction ? "none" : "lax", // allow local dev + HTTPS prod
       path: "/",
     })
     .status(200)
@@ -162,8 +155,8 @@ export const logout = expressAsyncHandler(async (req, res, next) => {
   try {
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: false, // change to true in production
-      sameSite: "lax",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
       path: "/",
     });
 
@@ -179,7 +172,7 @@ export const logout = expressAsyncHandler(async (req, res, next) => {
 
 /*
  ? @desc    Check authentication
- ? @route   GET /api/auth/check
+ ? @route   GET /api/auth/me
  ? @access  Private
 */
 export const checkAuth = expressAsyncHandler(async (req, res, next) => {
@@ -192,7 +185,6 @@ export const checkAuth = expressAsyncHandler(async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-    // Fetch user
     const { data: userFromDB, error } = await supabase
       .from("users")
       .select("*")
