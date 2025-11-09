@@ -17,7 +17,7 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5173", // frontend origin
+    origin: "https://social-media-frontend-seven-kappa.vercel.app", // frontend origin
     credentials: true,
   })
 );

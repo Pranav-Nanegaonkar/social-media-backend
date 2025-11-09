@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 import AppError from "../utils/AppError.js";
 import supabase from "../config/supabaseClient.js";
 
-const isProduction = process.env.NODE_ENV === "production";
 
 /*
  ? @desc    Register new user
@@ -25,7 +24,9 @@ export const register = expressAsyncHandler(async (req, res, next) => {
   }
 
   if (password.length < 8) {
-    return next(new AppError("Password must be at least 8 characters long", 400));
+    return next(
+      new AppError("Password must be at least 8 characters long", 400)
+    );
   }
 
   // Check if username already exists
@@ -135,8 +136,8 @@ export const login = expressAsyncHandler(async (req, res, next) => {
   res
     .cookie("accessToken", token, {
       httpOnly: true,
-      secure: isProduction, // true on Render
-      sameSite: isProduction ? "none" : "lax", // allow local dev + HTTPS prod
+      secure: process.env.NODE_ENV === "production", // true on Render
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
     })
     .status(200)
@@ -155,8 +156,8 @@ export const logout = expressAsyncHandler(async (req, res, next) => {
   try {
     res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production", // true on Render
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: "/",
     });
 
