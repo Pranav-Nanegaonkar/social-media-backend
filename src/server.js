@@ -17,10 +17,15 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: "https://social-media-frontend-seven-kappa.vercel.app", // frontend origin
+    origin: [
+      "http://localhost:5173",
+      "https://social-media-frontend-seven-kappa.vercel.app",
+      "https://social-media-frontend-flame-six.vercel.app",
+    ],
     credentials: true,
   })
 );
+
 app.use(cookieParser());
 
 app.use("/api/upload", uploadRouter);
