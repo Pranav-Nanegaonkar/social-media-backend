@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "build": "echo \"no build\""
+    "build": "echo \"no build\"",
+    "dev": "nodemon index.js"
   },
   "engines": {
     "node": "18.x"
