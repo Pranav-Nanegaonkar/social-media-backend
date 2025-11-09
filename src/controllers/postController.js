@@ -71,9 +71,7 @@ export const getAllPosts = expressAsyncHandler(async (req, res, next) => {
       .select("followedUserid")
       .eq("followerUserid", userId);
 
-    console.log(userId);
 
-    console.log(followedData);
 
     if (followErr) {
       console.error("Supabase follow query error:", followErr);
@@ -85,7 +83,6 @@ export const getAllPosts = expressAsyncHandler(async (req, res, next) => {
       ?.map((item) => item.followedUserid)
       .filter((item) => item !== null);
 
-    console.log(followedIds);
 
     // include the user's own id and dedupe
     const feedUserIds = Array.from(new Set([Number(userId), ...followedIds]));

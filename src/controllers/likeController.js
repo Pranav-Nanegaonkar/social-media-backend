@@ -28,7 +28,6 @@ export const getLikes = expressAsyncHandler(async (req, res, next) => {
 
   const userIds = (data || []).map((like) => like?.userid);
 
-  console.log(userIds);
 
   return res.status(200).json({
     status: "success",

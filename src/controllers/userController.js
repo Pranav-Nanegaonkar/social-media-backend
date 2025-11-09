@@ -22,7 +22,6 @@ export const getUser = expressAsyncHandler(async (req, res, next) => {
     .eq("id", Number(userid)) // make sure it's numeric
     .maybeSingle();
 
-  console.log({ userid, data, error });
 
   // Handle Supabase error
   if (error) {
